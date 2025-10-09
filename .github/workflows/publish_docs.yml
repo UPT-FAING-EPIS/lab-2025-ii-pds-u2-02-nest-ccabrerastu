@@ -1,0 +1,57 @@
+name: Actividad01 - Publicar documentación Compodoc
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-publish-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+
+      - name: Build docs for notifications
+        run: |
+          # Instala dependencias (usa npm ci si existe package-lock, si no cae usa npm install)
+          npm ci || npm install
+          # Genera documentación con Compodoc y la coloca en repo_root/documentation/notifications
+          npx @compodoc/compodoc -p tsconfig.json -d ../documentation/notifications
+        working-directory: notifications
+
+      - name: Build docs for customer-app
+        run: |
+          npm ci || npm install
+          npx @compodoc/compodoc -p tsconfig.json -d ../documentation/customer-app
+        working-directory: customer-app
+
+      - name: Ensure documentation index
+        run: |
+          # Crea un index simple que enlace a las dos documentaciones generadas
+          mkdir -p documentation
+          cat > documentation/index.html <<'HTML'
+          <!doctype html>
+          <html>
+            <head><meta charset="utf-8"><title>Documentación</title></head>
+            <body>
+              <h1>Documentación generada</h1>
+              <ul>
+                <li><a href="./notifications/index.html">Notifications (Compodoc)</a></li>
+                <li><a href="./customer-app/index.html">Customer App (Compodoc)</a></li>
+              </ul>
+            </body>
+          </html>
+          HTML
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: documentation
