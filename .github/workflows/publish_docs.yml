@@ -21,13 +21,13 @@ jobs:
       - name: Build docs for notifications
         run: |
           npm ci || npm install
-          npx @compodoc/compodoc -p tsconfig.json -d ../../documentation/notifications
+          npx @compodoc/compodoc -p tsconfig.json -d ../documentation/notifications
         working-directory: notifications
 
       - name: Build docs for customer-app
         run: |
           npm ci || npm install
-          npx @compodoc/compodoc -p tsconfig.json -d ../../documentation/customer-app
+          npx @compodoc/compodoc -p tsconfig.json -d ../documentation/customer-app
         working-directory: customer-app
 
       - name: Create documentation index
@@ -52,4 +52,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: documentation
-          destination_dir: .
