@@ -40,8 +40,8 @@ jobs:
             <body>
               <h1>Documentación generada</h1>
               <ul>
-                <li><a href="./notifications/index.html">Notifications (Compodoc)</a></li>
-                <li><a href="./customer-app/index.html">Customer App (Compodoc)</a></li>
+                <li><a href="./notifications/documentation/index.html">Notifications (Compodoc)</a></li>
+                <li><a href="./customer-app/documentation/index.html">Customer App (Compodoc)</a></li>
               </ul>
             </body>
           </html>
