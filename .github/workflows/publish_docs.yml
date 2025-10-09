@@ -23,13 +23,13 @@ jobs:
           # Instala dependencias (usa npm ci si existe package-lock, si no cae usa npm install)
           npm ci || npm install
           # Genera documentación con Compodoc y la coloca en repo_root/documentation/notifications
-          npx @compodoc/compodoc -p tsconfig.json -d ../documentation/notifications
+          npx @compodoc/compodoc -p tsconfig.json -d /documentation/notifications
         working-directory: notifications
 
       - name: Build docs for customer-app
         run: |
           npm ci || npm install
-          npx @compodoc/compodoc -p tsconfig.json -d ../documentation/customer-app
+          npx @compodoc/compodoc -p tsconfig.json -d /documentation/customer-app
         working-directory: customer-app
 
       - name: Ensure documentation index
