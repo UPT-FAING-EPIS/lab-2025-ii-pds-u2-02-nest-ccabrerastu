@@ -1,0 +1,94 @@
+name: Actividad02 - Paquetes NPM y pruebas
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies needed on runner
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq 
+
+      - name: Run tests and collect coverage (notifications)
+        working-directory: notifications
+        run: |
+          npm ci || npm install
+          npm run test:cov
+
+      - name: Upload test results (notifications)
+        uses: actions/upload-artifact@v4
+        with:
+          name: notifications-test-results
+          path: |
+            notifications/coverage
+
+      - name: Run tests and collect coverage (customer-app)
+        working-directory: customer-app
+        run: |
+          npm ci || npm install
+          npm run test:cov
+
+      - name: Upload test results (customer-app)
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-app-test-results
+          path: |
+            customer-app/coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Prepare and publish notifications package
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        working-directory: notifications
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Bump a package name for publishing: create a temporary package with new name
+          jq '.name = "@${{ github.repository_owner }}/notifications_cabrera" | .version = "0.0.0-" + (env.GITHUB_RUN_NUMBER|tostring)' package.json > package.temp.json
+          mv package.temp.json package.json
+          npm ci || npm install
+          # Configure npm to publish to GitHub Packages for this repository owner
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+          # publish to GitHub Packages (package.json.name already changed)
+          npm publish --access=restricted --registry=https://npm.pkg.github.com/
+
+      - name: Prepare and publish customer-app package
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        working-directory: customer-app
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          jq '.name = "@${{ github.repository_owner }}/customer-app_cabrera" | .version = "0.0.0-" + (env.GITHUB_RUN_NUMBER|tostring)' package.json > package.temp.json
+          mv package.temp.json package.json
+          npm ci || npm install
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+          npm publish --access=restricted --registry=https://npm.pkg.github.com/
+      #este workflow maneja paquetes NPM y 'nuget'
