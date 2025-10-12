@@ -59,7 +59,7 @@ jobs:
           projectBaseDir: .
           args: >
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.organization=${{ secrets.SONAR_ORG_KEY }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 

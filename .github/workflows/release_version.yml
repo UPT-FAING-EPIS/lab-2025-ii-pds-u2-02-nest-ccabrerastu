@@ -1,0 +1,56 @@
+name: Actividad03 - Release packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build & pack notifications
+        working-directory: notifications
+        run: |
+          npm ci || npm install
+          npm run test --if-present
+          # Actualiza la versión en package.json con la del tag, sin crear un nuevo commit/tag de git.
+          npm version ${{ steps.get_version.outputs.VERSION }} --no-git-tag-version
+          mkdir -p ../artifacts
+          npm pack --pack-destination ../artifacts
+
+      - name: Build & pack customer-app
+        working-directory: customer-app
+        run: |
+          npm ci || npm install
+          npm run test --if-present
+          npm version ${{ steps.get_version.outputs.VERSION }} --no-git-tag-version
+          mkdir -p ../artifacts
+          npm pack --pack-destination ../artifacts
+
+      - name: List artifacts for debugging
+        run: ls -R artifacts
+
+      - name: Create GitHub Release and upload artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "artifacts/*.tgz"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
