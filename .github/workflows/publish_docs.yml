@@ -18,37 +18,123 @@ jobs:
         with:
           node-version: '18.x'
 
-      - name: Build docs for notifications
-        run: |
-          npm ci || npm install
-          npx @compodoc/compodoc -p tsconfig.json -d ../documentation/notifications
+      - name: Instalar dependencias y generar docs para notifications
         working-directory: notifications
-
-      - name: Build docs for customer-app
         run: |
-          npm ci || npm install
-          npx @compodoc/compodoc -p tsconfig.json -d ../documentation/customer-app
+          npm install
+          npx @compodoc/compodoc -p tsconfig.json -d documentation
+
+      - name: Instalar dependencias y generar docs para customer-app
         working-directory: customer-app
-
-      - name: Create documentation index
         run: |
+          npm install
+          npx @compodoc/compodoc -p tsconfig.json -d documentation
+
+      - name: Mover documentación a carpeta raíz
+        run: |
+          # Crear carpeta documentation en raíz
           mkdir -p documentation
-          cat > documentation/index.html <<'HTML'
-          <!doctype html>
-          <html>
-            <head><meta charset="utf-8"><title>Documentación</title></head>
-            <body>
-              <h1>Documentación generada</h1>
-              <ul>
-                <li><a href="./notifications/index.html">Notifications (Compodoc)</a></li>
-                <li><a href="./customer-app/index.html">Customer App (Compodoc)</a></li>
-              </ul>
-            </body>
+          
+          # Mover docs de notifications
+          if [ -d "notifications/documentation" ]; then
+            mv notifications/documentation documentation/notifications
+          fi
+          
+          # Mover docs de customer-app
+          if [ -d "customer-app/documentation" ]; then
+            mv customer-app/documentation documentation/customer-app
+          fi
+
+      - name: Crear índice de documentación
+        run: |
+          cat > documentation/index.html << 'HTML'
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Documentación del Proyecto</title>
+              <style>
+                  body { 
+                      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                      margin: 0; 
+                      padding: 40px; 
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                  }
+                  .container {
+                      max-width: 800px;
+                      margin: 0 auto;
+                      background: white;
+                      padding: 40px;
+                      border-radius: 15px;
+                      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                  }
+                  h1 { 
+                      color: #333; 
+                      text-align: center;
+                      margin-bottom: 40px;
+                      font-size: 2.5em;
+                  }
+                  .project-list {
+                      display: flex;
+                      flex-direction: column;
+                      gap: 20px;
+                  }
+                  .project-card {
+                      background: #f8f9fa;
+                      border-radius: 10px;
+                      padding: 25px;
+                      border: 2px solid transparent;
+                      transition: all 0.3s ease;
+                      text-decoration: none;
+                      color: inherit;
+                  }
+                  .project-card:hover {
+                      border-color: #667eea;
+                      transform: translateY(-5px);
+                      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                  }
+                  .project-title {
+                      font-size: 1.4em;
+                      font-weight: bold;
+                      color: #333;
+                      margin-bottom: 10px;
+                  }
+                  .project-description {
+                      color: #666;
+                      line-height: 1.5;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>📚 Documentación del Proyecto</h1>
+                  <div class="project-list">
+                      <a href="./notifications/index.html" class="project-card">
+                          <div class="project-title">📨 Notifications Module</div>
+                          <div class="project-description">Documentación técnica del módulo de notificaciones con NestJS</div>
+                      </a>
+                      <a href="./customer-app/index.html" class="project-card">
+                          <div class="project-title">👥 Customer App</div>
+                          <div class="project-description">Documentación de la aplicación de gestión de clientes</div>
+                      </a>
+                  </div>
+              </div>
+          </body>
           </html>
           HTML
 
-      - name: Publish to GitHub Pages
+      - name: Verificar estructura final
+        run: |
+          echo "Estructura final de documentation:"
+          ls -la documentation/
+          echo "---"
+          ls -la documentation/notifications/ 2>/dev/null && echo "✅ notifications docs encontrados"
+          ls -la documentation/customer-app/ 2>/dev/null && echo "✅ customer-app docs encontrados"
+
+      - name: Publicar en GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: documentation
+          publish_dir: ./documentation
